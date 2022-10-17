@@ -1,4 +1,4 @@
-PROGS =fileref het
+PROGS =fileref
 EXTRA-FILES = test.txt
 
 include Makefile.include
