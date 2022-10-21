@@ -22,13 +22,13 @@ double funkcja2(double x,int dokladnosc)
 int main()
 {
     for(int i=11;i<21;i++)
-    {
-    cout<<"Wynik z podejścia bez namysłu dla "<<i<<" : "<<funkcja1(0.001)<<"\n";
+    {// poprawić zeby dostawał małe liczy program
+    cout<<"Wynik z podejścia bez namysłu dla "<<i<<" : "<<funkcja1(pow(1,-i))<<"\n";
     cout<<"Wynik z podejścia po namyśle dla "<<i<<" : "<<funkcja2(0.001,20)<<"\n";
     }
     return 0;
 }
-//olek zeryfikuj?
+//oblicz de hospitala
 
 /*
 #include<stdio.h>

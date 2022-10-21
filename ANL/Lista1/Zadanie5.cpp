@@ -1,14 +1,18 @@
-#include <stdio.h>
-#include <math.h>
-
-double integral(int n){
-    if(n==0) return log(2023.0/2022.0);
-    return (1.0/n)-(2022*integral(n-1));
+#include<stdio.h>
+#include<math.h>
+double pi(int x){
+    double suma = 0;
+    for(int i=0; i<x; i++){
+        suma += pow(-1, i)/(2*i+1);
+    }
+    return 4.0*suma;
 }
 
+// PI = 3,141592
+
 int main(){
-    for(int i=1; i<=20; i++){
-        printf("%d - %lf\n", i, integral(i));
-    }
+    int dokladnosc = 866860;
+    //2mln wyraz ciągu jest mniejszy niż
+    printf("Wartosc dla %d wyrazow ---> %lf\n", dokladnosc, pi(dokladnosc));
     return 0;
 }

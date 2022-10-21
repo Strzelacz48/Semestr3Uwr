@@ -4,7 +4,7 @@ using namespace std;
 double funkcja1(double x)
 {
     x=pow(x,13);
-    return 4044*(((sqrt(x+1))-1)/x);
+    return 4044.0*(((sqrt(x+1))-1)/x);
 }
 double funkcja2(double x)
 {
