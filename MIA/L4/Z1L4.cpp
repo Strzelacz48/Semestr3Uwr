@@ -15,10 +15,10 @@ for(int i=1;i<n+1;i++)
 {
     pom[i]=pom[i-1]+warriors[i-1];
 }
-/*for(int i=0;i<=n;i++)
+for(int i=0;i<=n;i++)
 {
     cout<<pom[i]<<" ";
-}*/
+}
 for(int i=0;i<q;i++)
 {
     cin>>arrows[i];
@@ -36,10 +36,11 @@ else
 {//bin search po pom
     int l=0;
     int r=n;
+    int x=arrows[i]+overdmg;
     while(l<=r)
     {
         int mid=(l+r)/2;
-        if(pom[mid]>arrows[i]+overdmg)
+        if(pom[mid]>x)
         {
             r=mid-1;
         }
@@ -47,19 +48,20 @@ else
         {
             l=mid+1;
         }
-        if(pom[mid-1]<arrows[i]+overdmg && pom[mid]>arrows[i]+overdmg)
+        if(pom[mid-1]<=x && pom[mid]>x)
         {
-            cout<<n-l<<"\n";
-            overdmg=arrows[i]+overdmg-pom[l];
+            cout<<n-mid+1<<"\n";
+            overdmg=x-pom[l];
             break;
         }
-        
+        //powinno działać
     }
-    cout<<n-l<<endl;
+    //cout<<n-l<<endl;
 }
 }
 return 0;
 }
+
 /*for(int i=0;i<q;i++)
 {
     while(arrows[i]>0)
