@@ -51,10 +51,10 @@ else
         if(pom[mid-1]<=x && pom[mid]>x)
         {
             cout<<n-mid+1<<"\n";
-            overdmg=x-pom[l];
+            overdmg=x-pom[mid];
             break;
         }
-        //powinno działać
+        //działa test 1 test 2 nie
     }
     //cout<<n-l<<endl;
 }
