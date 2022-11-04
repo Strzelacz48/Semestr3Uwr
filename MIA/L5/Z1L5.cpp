@@ -1,5 +1,7 @@
 #include<iostream>
+#include<map>
 using namespace std;
+
 struct FU
 {
     int parent; // ojciec
@@ -42,6 +44,7 @@ void Union(int a, int b)
 }
 int Fnazwy(string x)
 {
+    
     for(int i=0;i<n;i++)
     {
         if(nazwy[i]==x)
@@ -52,11 +55,13 @@ int Fnazwy(string x)
 int main()
 {
     int k,m;
+    map<string,int>mapa;
     cin>>n>>k>>m;
-    
+    string slowo;
     for(int i=0;i<n;i++)
     {
-        cin>>nazwy[i];
+        cin>>slowo;
+        mapa[slowo]=i;
     }
     init();
     for(int i=0;i<k;i++)
@@ -71,15 +76,52 @@ int main()
             Union(pop,nast);
         }
     }
-    string slowo;
-    int wynik=0;
+    long long wynik=0;
     for(int i=0;i<m;i++)
     {
         cin>>slowo;
-        int struktura=Fnazwy(slowo);
+        int struktura=mapa[slowo];
         wynik+=tab[tab[tab[struktura].parent].minimum].cost;
         //cout<<nazwy[struktura]<<" ";
     }
     cout<<wynik;
     return 0;
 }
+/*
+int main()
+{
+    int n,k,m;
+    string nazwy[1000007];
+    int costs[1000007];
+    cin>>n>>k>>m;
+    
+    for(int i=0;i<n;i++)
+    {
+        cin>>nazwy[i];
+    }
+    for(int i=0;i<n;i++)
+    {
+        cin>>costs[i];
+    }
+    for(int i=0;i<k;i++)
+    {
+        int pom;
+        cin>>pom;
+        for(int j=0;j<pom;j++)
+        {
+
+        }
+    }
+    string slowo;
+    int wynik=0;
+    for(int i=0;i<m;i++)
+    {
+        cin>>slowo;
+        wynik+=
+        //cout<<nazwy[struktura]<<" ";
+    }
+    cout<<wynik;
+    return 0;
+}
+/*
+*/
