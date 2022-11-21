@@ -5,12 +5,14 @@ def F(x):
 
 def f_1(x_0, x_1):
     wynik = (x_0+x_1)/2
-    while(F(wynik)!=0):
+    it=27
+    while(F(wynik)!=0 and it>0):
         if(F(wynik)>0):
             x_1=wynik
         else:
             x_0=wynik
         wynik=(x_0+x_1)/2
+        it-=1
     return wynik
 #for i in range(iteracje):
         #wynik = wynik - (((wynik-1)**2)*((wynik-2)**2)) / \
