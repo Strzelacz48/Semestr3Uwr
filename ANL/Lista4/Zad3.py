@@ -17,4 +17,7 @@ def bisection(F, a, b, eps):
             b_n = b_n
         n += 1
     return (a_n + b_n) / 2.0
+def f(x):
+    return x-0.49
+ 
 print()
