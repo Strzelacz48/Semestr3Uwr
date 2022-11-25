@@ -1,0 +1,144 @@
+# Systemy operacyjne Lista 7 Pamięć wirtualna i odwzorowania
+## Zadanie 1 Marcin
+![](https://i.imgur.com/OE4lMcf.png)
+::: info
+The `mmap()` system call creates a new memory mapping in the calling process’s virtual address space. A mapping can be of two types:
+:::
+**odwzorowanie pliku w pamięci** (*File mapping*) - to zmapowanie obszaru pliku lub zasobu plikopodobnego do pamięci wirtualnej procesu. Po zmapowaniu można bezpośrednio się dostać do zawartości poprzez operowanie na jego bajtach w odpowiadającym obszarze pamięci. Strony są automatycznie ładowane z pliku, gdy zajdzie taka potrzeba.
+:::    info
+*"A file mapping maps a region of a file directly into the calling process’s virtual memory. Once a file is mapped, its contents can be accessed by operations on the bytes in the corresponding memory region. The pages of the mapping are (automatically) loaded from the file as required. This type of mapping is also known as a file-based mapping or memory-mapped file."*
+:::
+**odwzorowanie pamięci anonimowej** (*Anonymous mapping*) - to mapowanie, które nie ma odpowiadającego pliku, a strony mapowania są zainicjalizowane zerami.
+::: info
+*"An anonymous mapping doesn’t have a corresponding file. Instead, the pages of the mapping are initialized to 0."*
+:::
+**odwzorowanie prywatne** (MAP_PRIVATE) - działa tak, że modyfikacje zawartości odwzorowania nie są widoczne dla innych procesów, a dla odwzorowań plików w pamięć - nie są zapisywane do pliku. Jądro dokonuje tego poprzez kopiowanie przy zapisie, a więc przy próbie modyfikacji zawartości strony przez proces, jądro tworzy nową, oddzielną kopię tej strony dla procesu. Ta technika wykorzystywana jest w bardzo prostym celu - zmiany nie mogą być widoczne dla innych procesów, a więc dopóki nie są wykonywane żadne zapisy, nie ma potrzeby kopiowania pamięci, a gdy jakiś proces spróbuje coś zapisać, zmiany będą widoczne tylko dla niego (na własnej kopii).
+
+
+**odwzorowanie dzielone**  (MAP_SHARED) - sprawia, że modyfikacje zawartości odwzorowania są widoczne dla innych procesów dzielących to odwzorowanie oraz w przypadku odwzorowań plików w pamięć, są zapisywane do plików. Pamięć odzworowana może być dzielona z odwzorowaniami w innych procesach (wpisy tabeli stron każdego procesu wskazują na to samo miejsce w pamięci RAM) na dwa sposoby: dwa procesy odwzorowują ten sam obszar pliku lub poprzez fork(2) (dziecko dziedziczy wszystkie odwzorowania rodzica).
+
+---
+Jaką zawartością wypełniana jest pamięć wirtualna należąca do tychże odwzorowań?
+
+- Zwykłe danymi a anonimowe zerami
+
+---
+Czym różni się odwzorowanie prywatne od dzielonego?
+- Tym że dla jedengo można widzieć odwzorowane pliki w innych procesach
+---
+Czy pamięć obiektów odwzorowanych prywatnie może być współdzielona? 
+- Tak, istnieje takie coś nazywa się `Shared anonymous mapping`
+---
+Czemu można tworzyć odwzorowania plików urządzeń blokowych w pamięć, a znakowych nie?
+- Chodzi o to, że urządzenia znakowe są abstrakcją nad prostą transmisją strumieniową, więc podpięcie ich pod pamięć nie ma żadnej oczywistej interpretacji
+---
+> Odwzorowanie prywatne plików urządzeń blokowych nie ma zbyt dużego sensu, gdyż chcemy aby zmiany wykonywane w plikach były widoczne np. na dysku (partycji).
+## Zadanie 2 Olek
+![](https://i.imgur.com/ENcdkfk.png)
+
+## Zadanie 3 kasia
+![](https://i.imgur.com/PZNPjIB.png)
+_Przy pomocy polecenia_ `cat /proc/$(pgrep Xorg)/status | egrep 'Vm|Rss'` _wyświetl zużycie pamięci procesu wykonującego kod X-serwera._
+Nie kopiujcie z listy, tylko stąd (apostrofy są zepsute).
+
+_Na podstawie podręcznika proc(5) wyjaśnij znaczenie
+poszczególnych pól._
+``` bash
+VmPeak:	 2100688 kB    <- Peak virtual memory size
+VmSize:	 2059384 kB    <- Virtual memory size
+VmLck:	       0 kB    <- Locked memory size
+VmPin:	       0 kB    <- Pinned memory size
+VmHWM:	  132436 kB    <- Peak resident set size ("high water mark")  (inaccurate)
+VmRSS:	  132084 kB    <- Resident set size   (inaccurate) 
+RssAnon:	   44100 kB    <- Size of resident anonymous memory   (inaccurate)
+RssFile:	   63464 kB    <- Size of resident file mappings   (inaccurate)
+RssShmem:	   24520 kB    <- Size of resident shared memory   (inaccurate)
+VmData:	  235564 kB    <- Size of data   (inaccurate)
+VmStk:	     132 kB    <- Size of stack   (inaccurate)
+VmExe:	    1612 kB    <- Size of text segments   (inaccurate)
+VmLib:	  146216 kB    <- Shared library code size
+VmPTE:	     732 kB    <- Page table entries size
+VmSwap:	       0 kB    <- Swapped-out virtual memory size by anonymous private pages   (inaccurate)
+```
+
+_Przypomnij jaka jest różnica między zbiorem roboczym i rezydentnym procesu._
+Zbiór rezydentny - pamięć procesu, która naprawdę jest w pamięci,
+Zbiór roboczy - część zbioru rezydentnego która jest potrzebna do wykonania programu.
+
+_Napisz krótki skrypt (np. w języku Python lub awk(1)), który wyznaczy sumę «VmSize» i osobno sumę «VmRSS» wszystkich procesów._
+Napisałam to w bashu :\)\)
+Stwórzcie sobie jakiś plik script.sh, chmodem zmiencie uprawnienia, żeby mógł się wykonywać i wklejcie kod.
+:::spoiler obrazkowo
+![](https://imgur.com/SzTCThi.png)
+(w tym nano oczywiście wklejam kod)
+:::
+```
+#! /usr/bin/bash
+arr=($(ps -axo pid | tail -n +2 | xargs))
+vmsize=$((0))
+vmrss=$((0))
+for str in ${arr[@]}; do
+   size=$(cat /proc/$str/status 2>errors.txt | egrep 'VmSize' | egrep -o '[0-9]+')
+   rss=$(cat /proc/$str/status 2>errors.txt | egrep 'VmRSS' | egrep -o '[0-9]+')
+   vmsize=$((vmsize+$((size))))
+   vmrss=$((vmrss+$((rss))))
+done
+
+echo "Vmsize: $((vmsize))"
+echo "Vmrss: $((vmrss))"
+
+```
+
+U mnie w VmSize wychodzi coś rzędu 309 gigabajtów, a VmRSS 5, dużoo
+
+_Czemu ta druga wartość nie pokrywa się z rozmiarem używanej pamięci raportowanym przez polecenie «vmstat -s»?_
+
+vmstat - Report virtual memory statistics
+Mi wychodzi 2849024 KB used memory, czyli 2GB, a nie 5 jak wcześniej. Pewnie z powodu współdzielenia pamięci, skryptem liczę te same fragmenty kilka razy.
+
+## Zadanie 4 Kornelia
+![](https://i.imgur.com/rCmET6w.png)
+
+_Jakie informacje musi dostarczyć procesor, żeby można było wykonać procedurę obsługi błędu stronicowania?_
+- fault_addr - jaki adres wywołał błąd strony
+- fault_pc - jaka instrukcja spowodowała błąd strony
+- fault_size - ile bajtów ktoś próbował ściągnąć
+- fault_prot - z jakimi uprawnieniami był robiony dostęp do strony
+
+![](https://i.imgur.com/SCkWVtI.png)
+
+_Na podstawie slajdów do wykładu opisz algorytm obsługi błędu stronicowania w systemie Linux. Kiedy jądro wyśle procesowi sygnał SIGSEGV z kodem «SEGV_MAPERR» lub «SEGV_ACCERR»?__
+
+Gdy wystąpi błąd strony, procesor przechodzi w tryb jądra, zapisuje kontekst i sprawdza, która strona spowodowała błąd strony. 
+1. Jeśli jądro nie znalazło w vm_area_struct segmentu, w którym byłby odwzorowany fault_addr, to wysyła sygnał SIGSEGV z kodem **SEGV_MAPERR** i proces zostaje zabity.
+2. Jeśli fault_addr należy do jakiegoś segmentu, ale uprawnienia segmentu nie pozwalają na wykonanie danej operacji - proces także zostanie zabity sygnałem SIGSEGV (z kodem **SEGV_ACCERR**). 
+3. Jeśli fault_addr należy do jakiegoś segmentu a uprawnienia strony zgadzają się z tym, co procesor próbował zrobić (np. próbował czytać i do tego segmentu można robić odczyt), to jest to normalny błąd strony - strona nie znajduje się jeszcze w pamięci i musi zostać do niej załadowana.
+
+_Do czego służą struktury jądra «mm_struct::pgd» i «mm_struct::mmap»?_
+![](https://i.imgur.com/5vmJ4je.png)
+
+- **mmap** - wskaźnik na listę (vm_area_struct) wszystkich segmentów pamięci wirtualnej, które są odwzorowane w przestrzeni adresowej procesu; lista ta zawiera informacje o segmentach, takie jak : wskaźniki na początek i koniec segmentu (vm_end, vm_start), uprawnienia dostępu do tego segmentu (vm_prot) i flagi (segment współdzielony czy prywatny, flaga copy-on-write)
+- **pgd** (page global directory) - tablica skonstruowana na podstawie vm_area_struct, tworzona leniwie. Jest pierwszym poziomem tablicy stron dla procesu.
+
+_W jakiej sytuacji wystąpi pomniejsza usterka strony (ang. minor page fault) lub poważna usterka strony (ang. major page fault)?_
+- **pomniejsza usterka strony** (ang. minor page fault) - proces nie ma odwzorowania na stronę w swojej tablicy stron, ale strona jest w RAM-ie; jądro musi jedynie dodać odpowiedni wpis do tablicy stron, nie musi niczego wczytywać do pamięci.
+Minor page fault może wystąpić, gdy pamięć jest dzielona przez różne procesy i strona została już załadowana dla któregoś z nich.
+- **poważna usterka strony** (ang. major page fault) - stona nie znajduje się w RAM-ie, musi zostać wczytana z dysku (co jest dość wolną operacją); wczytywanie stron jest leniwe - system ładuje je do pamięci dopiero, gdy są potrzebne (przy pierwszej próbe dostępu)
+
+_Jaką rolę pełni w systemie bufor stron (ang. page cache)?_
+Bufor stron (page cache) - to fragment pamięci RAM, który ma trzymać jak najwięcej przydatnych danych w celu przyspieszenia obsługi błedu stron. Jeśli jakaś strona znajduje się w cache-u, to możemy czytać z niego a nie bezpośrednio z dysku. Przy zapisach zmiany zostają dokonane jedynie w buforze stron (zamiast zapisów bezpośrednio na dysk), w którym zmienione strony są oznaczone bitem dirty. Pozwala to na znacznie zmniejszyć liczbę operacji czytania i pisania na dysk (operacje te są kosztowne).
+## Zadanie 5
+![](https://i.imgur.com/qa4MytR.png)
+
+## Zadanie 6
+![](https://i.imgur.com/BjN3XDv.png)
+
+![](https://i.imgur.com/d7LSnsr.png)
+---
+
+## Zadanie 7
+![](https://i.imgur.com/GWWRcQq.png)
+
+## Zadanie 8
+![](https://i.imgur.com/FsrFjBl.png)
+

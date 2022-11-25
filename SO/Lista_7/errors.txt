@@ -1,0 +1,1 @@
+cat: /proc/5804/status: Nie ma takiego pliku ani katalogu
