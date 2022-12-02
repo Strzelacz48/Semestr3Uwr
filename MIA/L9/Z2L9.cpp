@@ -1,5 +1,8 @@
 #include<iostream>
 using namespace std;
+//przy dodaniu przedziału zapisujesz gdzie mozesz isc
+//Odpalamy dfs-a przy pomocy tych danych
+//
 struct {
     long long x;
     long long y;
