@@ -1,73 +1,45 @@
-#include<iostream>
+#include <algorithm>
+#include <iostream>
+#include <vector>
+ 
+#define MAX 105
+ 
 using namespace std;
-//przy dodaniu przedziału zapisujesz gdzie mozesz isc
-//Odpalamy dfs-a przy pomocy tych danych
-//
-struct {
-    long long x;
-    long long y;
-    bool visited;
-}interval;
-bool pathfind(pair<long long,long long> *tab, long long target,long long position,long long n)
+vector<bool> Reach(MAX, false);
+vector< pair<int,int> > Interval;
+ 
+void dfs(int n)
 {
-    if(tab[target].first<tab[position].second && tab[position].second<tab[target].second || tab[target].first<tab[position].first && tab[position].first<tab[target].second)
-    {
-        return true;
-    }
-    for(int i=n;i>0;i--)
-    {
-        if(i==position)
-        {
-            continue;
-        }
-        if(tab[i].first<tab[position].second && tab[position].second<tab[i].second || tab[i].first<tab[position].first && tab[position].first<tab[i].second)
-        {
-            if(pathfind(tab,target,i,n))
-            {
-                return true;
-            }
-        }
-    }
-    return false;
+    Reach[n] = true;
+ 
+    for(int i = 1; i < Interval.size(); i++)
+        if(!Reach[i])
+            if((Interval[n].first > Interval[i].first && Interval[n].first < Interval[i].second) || (Interval[n].second > Interval[i].first && Interval[n].second < Interval[i].second))
+                dfs(i);
 }
-/*
-void DFS(struct interval *tab,long long from,long long to,long long n)
-{
-    for(int i=0;i<n;i++)
-    {
-        tab[i].visited=false;
-    }
-    WIP
-} */
+ 
 int main()
 {
-    int pom;
-    long long n,x,y,it=0;
-    pair<long long,long long> tab[n];
-    cin>>n;
-    for(long long i=0;i<n;i++)
+    int Q;
+    cin >> Q;
+    Interval.push_back(make_pair(0,0));
+ 
+    while(Q--)
     {
-        cin>>pom;
-        if(pom==1)//add interval
+        int t, x, y;
+        cin >> t >> x >> y;
+ 
+        if(t == 1)
+            Interval.push_back(make_pair(x,y));
+        else
         {
-            cin>>x>>y;
-            tab[it].first=x;
-            tab[it].second=y;
-            it++;
-
-        }
-        else//check interval
-        {
-            cin>>x>>y;
-            if(pathfind(tab,y,x,it))
-            {
-                cout<<"YES\n";
-            }
+            fill(Reach.begin(), Reach.end(), false);
+            dfs(x);
+ 
+            if(Reach[y])
+                cout << "YES\n";
             else
-            {
-                cout<<"NO\n";
-            }
+                cout << "NO\n";
         }
     }
-    return 0;
 }
