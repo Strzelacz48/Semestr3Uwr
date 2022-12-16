@@ -1,0 +1,201 @@
+# Systemy operacyjne 10
+## Zadanie 1
+![](https://i.imgur.com/yaJU0Ez.png)
+_Czym różni się przetwarzanie równoległe (ang. parallel) od przetwarzania współbieżnego (ang. concurrent)?_
+![](https://imgur.com/pdJnCQ9.png)
+![](https://imgur.com/XYwvnBK.png)
+przetwarzanie równoległe - jednoczesne przetwarzanie wielu wątków (przez różne rdzenie procesora)
+przetwarzania współbieżnego - tniemy czas procesora na takie kwanty i rozdajemy wątkom.
+
+_Czym charakteryzują się procedury wielobieżne (ang. reentrant)?_
+
+Procedura wielobieżna - procedura, której wykonywanie może zostać przerwane np. przerwaniem, bądź wywołaniem innej funkcji wewnątrz ciała funkcji, a następnie może ona zostać ponownie wywołana, zanim poprzednie wywołanie zostanie zakończone. Po zakończeniu drugiego wywołania, można wrócić do przerwanego wywołania, a wykonywanie go można bezpiecznie kontynuować. Taką procedurę cechują:
+- Nie powinna operować na niestałych zmiennych globalnych i zmiennych static, jednak może pracować z takimi danymi (nie jest to zalecane!).
+- Nie może modyfikować swojego kodu - techniki takie jak blitting mogłyby sprawić, że kod nie byłby taki sam przy kolejnym wywołaniu.
+- Nie może wywoływać procedur niewielobieżnych.
+
+Procedura wątkowo-bezpieczna - to procedura, która gwarantuje brak sytuacji wyścigu, gdy jest uruchamiana przez kilka wątków jednocześnie.
+
+_Podaj przykład procedury w języku C (a) wielobieżnej, ale nie wielowątkowo-bezpiecznej (ang. MT-safe) (b) na odwrót._
+:::spoiler Procedura wielobieżna, ale nie wątkowo-bezpieczna:
+```c 
+/* We save the global state in a local variable and we restore
+   it at the end of the function.  The function is now reentrant
+   but it is not thread safe. */
+
+int t;
+
+void swap(int *x, int *y)
+{
+    int s;
+    s = t;
+    t = *x;
+    *x = *y;
+    *y = t;
+    t = s;
+}
+```
+W powyższym przykładzie może dojść do sytuacji, w której dwa różne wątki wykonują funkcję swap. Jeśli jeden z nich zostanie przerwany po *y = t, ale przed t = s, a drugi wykonany, potencjalnie może zmienić on wartość zmiennej t . W takiej sytuacji powrót do pierwszego wątku mógłby zwracać niepoprawne wyniki.
+:::
+
+:::spoiler Procedura wątkowo-bezpieczna, ale nie wielobieżna:
+```c
+/* We use a thread local variable: the function is now
+   thread-safe but still not reentrant (within the
+   same thread). */
+__thread int t;
+
+void swap(int *x, int *y)
+{
+    t = *x;
+    *x = *y;
+    *y = t;
+}
+```
+:::
+
+_Kiedy w jednowątkowym procesie uniksowym może wystąpić współbieżność?_
+
+Jednowątkowy program może działać współbieżnie, jeśli wykorzysta skoki setjmp(3) i longjmp(3). Taką “współbieżność” nazywamy wielozadaniowością kooperacyjną, a najlepszym przykładem są prawdopodobnie korutyny, czyli kilka współprogramów działających w obrębie jednego procesu.
+
+
+## Zadanie 2
+![](https://i.imgur.com/p4gicAI.png)
+ **zakleszczenie (deadlock)** - nazywane również blokadą wzajemną.  Jest to sytuacja, w której co najmniej dwie różne akcje czekają na siebie nawzajem, więc żadna nie może się zakończyć.
+
+W przetwarzaniu współbieżnym pojęcie zakleszczenia pojawia się, kiedy żaden z procesów nie napotyka warunków do przejścia do innego stanu, przy czym kanały komunikacyjne pozostają puste.
+![](https://i.imgur.com/Gc1yOCQ.png)
+Można o tym myśleć jak o skrzyżowaniu róworzędnym gdzie wszystki samochody podjechały w tym samym momencie. Nikt nie może ruszyć bo czeka aż osoba z prawej pojedzie.
+
+ **głodzenie (starvation)** - Mamy kilka wątków i jeśli algorytm lub architektura pozwala na to, że jeden proces nigdy nie będzie miał szansy wykonania się, wtedy mówimy o zagłodzeniu procesu. Jeśli algorytm szeregowania procesów jest zły, wtedy istnieje szansa, że wątek zostanie zagłodzony, ponieważ zawsze będą wykonywane inne procesy np. o wyższym priorytecie. 
+ ::: spoiler Ciekawostka
+ Dla zilustrowania wagi problemu zagłodzenia wykorzystywany jest przykład systemu IBM 7094 używanego na MIT – gdy w 1974 roku był wycofywany z użycia, wykryto zadanie wsadowe o niskim priorytecie, które przedłożono do wykonania w 1967 roku i nigdy nie zostało aktywowane. ;)
+ :::
+ **uwięzienie (livelock)** - stanowi specjalny przypadek zagłodzenia. Występuje gdy obydwa procesy aby uniknąć deadlock’a zatrzymują wykonywanie kodu aby dać szansę innym wątkom na wykonanie się. Aby ułatwić zrozumienie tego, wyobraźmy sobie sytuację gdy dwie osoby na korytarzu aby minąć siebie wybierają ciągle tą samą trasę, kończąc na ciągłej wzajemnej blokadzie. Livelock może wydawać się podobny do deadlock (rezultat jest taki sam). W przypadku Livelock stan procesu się jednak **zmienia**. Z kolei w deadlock, pozostaje ciągle taki sam. W przykładzie dwóch osób na korytarzu można zauważyć, że ciągle zmieniają swoją pozycje (lewo, prawo  : próbując się ominąć).
+ 
+## Zadanie 3 
+![](https://i.imgur.com/Z7RPboS.png)
+
+**Wyścig** - sytuacja, w której kilka wątków współbieżnych korzysta z tego samego zasobu (nieprzystosowanego do wielowątkowości), w tym przynajmniej 1 wątek modyfikuje ten zasób. Rezultat takich działań zależy od kolejności przeplotu wątków (nie mamy nad nim kontroli).
+
+Na operację `tally = tally + 1` składa się : 
+- wczytanie `tally` z rejestru, 
+- dodanie 1 do rejestru, 
+- zapisanie zmienionej wartości `tally` do pamięci procesu (sekcja *.data*). 
+
+**Najmniejsza możliwa wartość** `talli` to 2. Przykładowy przeplot wątków :
+1. Wątek 1 wczytuje `tally` = 0, zwiększa wartość w swoim rejestrze o 1, ale jeszcze nie zapisuje zmian do pamięci.
+2. Każdy z pozostałych k - 1 wątków wczytuje `talli` do rejestru, zwiększa o 1 i zapisuje zmiany. Powtarza to n - 1 razy. (Kolejność działań nie ma tu znaczenia).
+3. Wątek 1 zapsiuje zmienioną wartość do pamięci, teraz `tally` = 1.
+4. Pozostałe wątki wczytują `talli` = 1, zwiększają o 1 (`talli` w rejestrach = 2), ale jeszcze nie zapisują.
+5. Wątek 1 wczytuje, zwiększa i zapisuje `tally` n - 1 razy. Wcześniej wykonał już jedną iterację, co daje łącznie n, czyli skończył swoje działanie.
+6. Każdy z pozostałych wątków zapisuje nową wartość `talli` = 2, czyli ostatecznie `talli` = 2; 
+
+**Największa możliwa wartość** `talli` to 50 *  k. 
+Kolejność działań może być dowolna pod warunkiem, że jeśli jakiś wątek wczyta `talli`, to dopóki nie zapisze zmiany do pamięci, żaden inny wątek nie wykona odczytu (każda iteracja w każdym wątku zwiększa `talli` o 1).
+Przykładowo - najpierw wątek 1 wykona swoje wszystkie iteracje (`talli` = 50), potem drugi (`talli` = 100), itd.
+
+## Zadanie 4 Olek
+![](https://i.imgur.com/mnwGMoS.png)
+> Opisz semantykę podanych funkcji i powiedz gdzie się różnią od swoich odpowiedników na procesach.
+> 
+
+
+
+Do tworzenia wątków używana jest poniższa funkcja `pthread_create(3)` - pierwszy argument `thread` to wskaźnik na strukturę `pthread_t` (czyli wątek), `attr` określa atrybuty wątku, `start_routine` to wskaźnik na funkcję (rutynę), którą chcemy uruchomić w wątku, a `*arg` to wskaźnik na argument (strukturę danych) przekazywany do wątku.
+
+```c
+int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+                   void *(*start_routine) (void *), void *arg);
+```
+
+Zakończenie wątku funkcją `pthread_exit(3)` zwraca wartość przez `retval`.
+
+```c
+void pthread_exit(void *retval);
+```
+
+Oczekiwanie na wątek odbywa się dzięki funkcji `pthread_join(3)`, której argumentami są `thread` (wątek na który chcemy czekać) oraz `retval`, czyli wartość, jakiej oczekujemy, że zostanie zwrócona.
+
+```c
+int pthread_join(pthread_t thread, void **retval);
+```
+
+Aby zarejestrować funkcję do wywołania na zakończenie wątku, należy dodać funkcję `routine` z jej argumentami `arg` na górę stosu, w tym celu używamy funkcji `pthread_cleanup_push(3)`.
+
+```c
+void pthread_cleanup_push(void (*routine)(void *), void *arg);
+```
+
+Jeśli chcemy uzyskać ID uruchomionego wątku (w ciele funkcji tego wątku), korzystamy z funkcji `pthread_self(3)`, która zawsze kończy się pomyślnie i zwraca ID.
+
+```c
+pthread_t pthread_self(void);
+```
+
+Aby wysłać żądanie zakończenia (anulowania) wątku, korzystamy z funkcji `pthread_cancel(3)`. Jej argumentem jest `thread`, a więc wątek, który chcemy zatrzymać.
+
+```c
+int pthread_cancel(pthread_t thread);
+```
+
+> Porównaj zachowanie wątków **złączalnych** i **odczepionych.**
+> 
+
+**Wątki przyczepione / złączalne** *(ang. attached, joinable)* są domyślnym rodzajem działania wątków, polegają one na tym, że nie zwalniają zasobów po zakończeniu rutyny. Aby je zwolnić, należy wykorzystać funkcję `pthread_join(3)` omówioną powyżej.
+
+**Wątki odczepione** *(ang. detached)* to wątki, które po zakończeniu rutyny natychmiastowo zwalniają wykorzystywane przez nie zasoby. Aby ustawić takie zachowanie, należy wykorzystać funkcję `pthread_detach(3)`, której argumentem jest ID wybranego wątku.
+
+Te dwa tryby różni więc czas, w którym wątki zwalniają zasoby. Gdybyśmy w wątku przyczepionym nie zwolnili zasobów, to zostaną zwolnione dopiero po zakończeniu programu.
+
+> Zauważ, że w systemie Linux procedura pthread_create odpowiada za utworzenie reprezentacji wątku w przestrzeni użytkownika, w tym utworzenie stosu i uruchomienie wątku przu pomocy wywołania clone(2). Kto zatem odpowiada za usunięcie segmentu stosu z przestrzeni użytkownika, gdy wątek złączalny albo odczepiony zakończy pracę? Pomocne może być zajrzenie do implementacji funkcji `pthread_exit`, `pthread_join` i `__unmapself`.
+>
+
+## Zadanie 5
+![](https://i.imgur.com/a2YKi3C.png)
+Wywołanie fork(2) kopiuje cały proces, a więc strony pamięci, otwarte deskryptory plików i inne. Jedną z różnic procesów dziecka i rodzica jest to, że proces dziecka ma tylko jeden wątek. Klonowanie całego procesu ze wszystkimi wątkami byłoby problematyczne i w większości przypadków nie byłoby to czymś, czego oczekiwałby programista.
+
+Nieoczekiwanym problemem wynikającym z tego podejścia jest to, że w momencie wywołania fork(2), część wątków może być w krytycznych sekcjach kodu i wykonywać nieatomowe operacje otoczone muteksami. W procesie dziecka wątki znikają i pozostałe dane (potencjalnie częściowo zmienione) stają się nienaprawialne. Nie jesteśmy w stanie określić, co robiły inne wątki i co powinno zostać dokończone, aby dane były takie, jak oczekiwaliśmy. Ponadto, stan muteksów jest niezdefiniowany, przez co konieczne będzie wywołanie pthread_mutex_init() w dziecku, aby zresetować je do użytecznego stanu.
+
+Problem z muteksami i sekcjami krytycznymi kodu implikują kolejny problem. Funkcje biblioteczne mog korzystać z danych globalnych i nawet jeśli są wątkowo-bezpieczne, to mogą korzystać z locków. Oznacza to, że nie jest bezpieczne wywoływanie np. fork(2) w programie wielowątkowym, gdy w jakimś wątku używany jest malloc(3) (gdyż używa on system locków).
+
+Użycie execve(2) również powoduje problemy. Po wywołaniu tej funkcji, deskryptory plików zostają otwarte i uruchomiony program może do nich pisać lub z nich czytać. Jeśli deskryptor pliku pozostanie otwarty, w pewnych sytuacjach mogą wystąpić problemy z bezpieczeństwem programu. Aby temu zapobiec, można użyć fcntl(2) z flagą FD_CLOEXEC, jednak w takim przypadku mogą wystąpić sytuacje wyścigu. Załóżmy, że jeden wątek wywołuje fork(2) i execve(2), w trakcie gdy drugi wątek wywołuje open(2). Drugi wątek chce wywołać fcntl(2), jednak pierwszy wątek wykonał już fork(2) i execve(2), co sprawi, że nowo uruchomiony program będzie miał zduplikowany deskryptor pliku. Kolejność wywołań, o jakiej mowa, to:
+```
+open -> fork -> execve -> fcntl
+```
+Gdy jeden z wątków zawoła _exit(2), to zostanie wyłączony tylko ten wątek, w którym _exit(2) zostało wywołane. Często będzie to nieoczekiwane zachowanie i chcąc zakończyć wszystkie wątki w procesie, powinniśmy użyć exit_group(2).
+Zakładając, że w programie został napisany signal handler, zgodnie ze specyfikacją POSIX sytuacja będzie wyglądała następująco:
+> POSIX.1 distinguishes the notions of signals that are directed to the process as a whole and signals that are directed to individual threads. According to POSIX.1, a process-directed signal (sent using kill(2), for example) should be handled by a single, arbitrarily selected thread within the process.
+Oznacza to, że po wysłaniu SIGINT (bądź innego sygnału), zostanie wylosowany dowolny wątek tego procesu, do którego zostanie wysłany sygnał.
+
+Wszystkie wątki w danym procesie dzielą wspólny pipe(2) (info tutaj), a więc zamknięcie jednego końca w którymś wątku sprawi, że pipe zostanie zamknięty we wszystkich wątkach. Wtedy program zakończy się z błędem SIGPIPE, mówiącym o “Broken pipe”.
+
+Jeśli wiele wątków chciałoby czytać z jednego pliku (mając ten sam deskryptor), mogłoby dojść do nieoczekiwanej sytuacji, w której oba wątki czytałyby to samo, mimo że nie powinny. Może się coś takiego wydarzyć, gdy wywoływane są takie operacje:
+```
+// Thread A
+lseek(fd, 300, SEEK_SET);
+read(fd, buf1, 100);
+
+// Thread B
+lseek(fd, 700, SEEK_SET);
+read(fd, buf2, 100);
+```
+w kolejności A(lseek) -> B(lseek) -> A(read) -> B(read). Aby tego problemu uniknąć, można skorzystać z funkcji pread, w której dodatkowo przekazujemy offset, a cała operacja odczytu jest wykonywana atomowo:
+```
+// Thread A
+pread(fd, buf1, 100, 300);
+
+// Thread B
+pread(fd, buf2, 100, 700);
+```
+
+## Zadanie 6
+![](https://i.imgur.com/r9VMcfP.png)
+
+## Zadanie 7
+![](https://i.imgur.com/OgbBtfv.png)
+
+## Zadanie 8
+![](https://i.imgur.com/wE9QTdo.png)
+
+
