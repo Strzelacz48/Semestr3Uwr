@@ -1,1 +1,1 @@
-58, 46
+np.linspace (-10, 10,num=1010, dtype=np.float64)
